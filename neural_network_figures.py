@@ -8,12 +8,13 @@ import cv2
 import re
 
 
-COUNT_TRAINING_ITEMS = 80
-IMAGE_PIXELES = 28 * 28
-OUTPUT_VARIANTS = 3
-SECOND_LAYER = 5
+COUNT_TRAINING_ITEMS = 80 # сколько из каждого файла берем фигур на тренировку
+IMAGE_PIXELES = 28 * 28 # размер выходного слоя
+OUTPUT_VARIANTS = 3 # размер выходного слоя
+SECOND_LAYER = 5 # размер скрытого слоя
 
 
+# запись в файл весов
 def write_file(W, b):
     f = open('weights.txt', 'w')
     for index in W[1]:
@@ -33,6 +34,7 @@ def write_file(W, b):
     f.close()
 
 
+# чтение весов из файла
 def read_file():
     text = open('weights.txt').read()
     mass = re.split(r"-----|Weights", text)
@@ -57,6 +59,7 @@ def convert_to_numpy_simple_array(arr):
     return arr.reshape(1, IMAGE_PIXELES)[0]
 
 
+# перевод картинок для тренировки в массив
 def get_matrix_images_for_train():
     images = []
     target = []
@@ -79,6 +82,7 @@ def get_matrix_images_for_train():
     return images, target
 
 
+# перевод картинок для тестирования в массив
 def get_matrix_images_for_test():
     images = []
     target = []
@@ -223,6 +227,7 @@ def predict_image(W, b, X):
     return h
 
 
+# Тренировка сети
 def train():
     images, y_train = get_matrix_images_for_train() # массив пикселей картинки и соответсвующее им значение (круг, квадрат, треугольник)
     X_scale = StandardScaler()
@@ -240,6 +245,7 @@ def train():
     write_file(W, b)
 
 
+# Тестирование сети
 def test():
     images, y_test = get_matrix_images_for_test() # массив пикселей картинки
     X_test = StandardScaler().fit_transform(images)
@@ -250,15 +256,15 @@ def test():
 
     y_pred, h_pred = predict_y(W, b, X_test, 3)
 
-    h_solo = predict_image(W, b, X_test[rand])
-    answer = h_solo[3]
+    predicted_result = predict_image(W, b, X_test[rand])
+    answer = predicted_result[3]
 
     # вероятность угадать
     accuracy_score(y_test, y_pred) * 100
     print('Prediction accuracy is {}%'.format(accuracy_score(y_test, y_pred) * 100))
 
     # вывод картинки
-    plt.matshow([h_solo[1][i: i + 28] for i in range(0, len(h_solo[1]), 28)])
+    plt.matshow([predicted_result[1][i: i + 28] for i in range(0, len(predicted_result[1]), 28)])
     plt.show()
 
     figure_index = answer.tolist().index(max(answer))
@@ -275,7 +281,7 @@ if __name__ == "__main__":
     menu = int(input())
 
     if menu == 1:
-      train()
+        train()
     elif menu == 2:
         test()
     else:

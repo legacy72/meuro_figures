@@ -1,11 +1,9 @@
-from sklearn.datasets import load_digits
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from random import shuffle
-import numpy as np
-import numpy.random as r
 import matplotlib.pyplot as plt
+import numpy.random as r
+import numpy as np
+import random
 import cv2
 import re
 
@@ -13,7 +11,7 @@ import re
 COUNT_TRAINING_ITEMS = 80
 IMAGE_PIXELES = 28 * 28
 OUTPUT_VARIANTS = 3
-SECOND_LAYER = 10
+SECOND_LAYER = 5
 
 
 def write_file(W, b):
@@ -51,6 +49,56 @@ def read_file():
         if (i == ''):
             a3.remove(i)
     return a1, a2, a3
+
+
+# перевод двумерный массив в одномерный numpy массив
+def convert_to_numpy_simple_array(arr):
+    arr = np.array(arr)
+    return arr.reshape(1, IMAGE_PIXELES)[0]
+
+
+def get_matrix_images_for_train():
+    images = []
+    target = []
+
+    for i in range(1, COUNT_TRAINING_ITEMS + 1):
+        image = cv2.imread('./circles/drawing(' + str(i) + ').png', 0)
+        images.append(convert_to_numpy_simple_array(image))
+        target.append(0)
+
+    for i in range(1, COUNT_TRAINING_ITEMS + 1):
+        image = cv2.imread('./squares/drawing(' + str(i) + ').png', 0)
+        images.append(convert_to_numpy_simple_array(image))
+        target.append(1)
+
+    for i in range(1, COUNT_TRAINING_ITEMS + 1):
+        image = cv2.imread('./triangles/drawing(' + str(i) + ').png', 0)
+        images.append(convert_to_numpy_simple_array(image))
+        target.append(2)
+
+    return images, target
+
+
+def get_matrix_images_for_test():
+    images = []
+    target = []
+
+    for i in range(COUNT_TRAINING_ITEMS + 1, 100):
+        image = cv2.imread('./circles/drawing(' + str(i) + ').png', 0)
+        images.append(convert_to_numpy_simple_array(image))
+        target.append(0)
+
+    for i in range(COUNT_TRAINING_ITEMS + 1, 100):
+        image = cv2.imread('./squares/drawing(' + str(i) + ').png', 0)
+        images.append(convert_to_numpy_simple_array(image))
+        target.append(1)
+
+    for i in range(COUNT_TRAINING_ITEMS + 1, 100):
+        image = cv2.imread('./triangles/drawing(' + str(i) + ').png', 0)
+        images.append(convert_to_numpy_simple_array(image))
+        target.append(2)
+
+    return images, target
 
 
 def convert_y_to_vect(y):
@@ -127,7 +175,7 @@ def train_nn(nn_structure, X, y, iter_num=1000, alpha=0.25):
     avg_cost_func = []
     print('Starting gradient descent for {} iterations'.format(iter_num))
     while cnt < iter_num:
-        if cnt%100 == 0:
+        if cnt % 100 == 0:
             print('Iteration {} of {}'.format(cnt, iter_num))
         tri_W, tri_b = init_tri_values(nn_structure)
         avg_cost = 0
@@ -156,6 +204,7 @@ def train_nn(nn_structure, X, y, iter_num=1000, alpha=0.25):
         avg_cost = 1.0/m * avg_cost
         avg_cost_func.append(avg_cost)
         cnt += 1
+
     return W, b, avg_cost_func
 
 
@@ -165,60 +214,13 @@ def predict_y(W, b, X, n_layers):
     for i in range(m):
         h, z = feed_forward(X[i, :], W, b)
         y[i] = np.argmax(h[n_layers])
-        print(h[3])
     return y, h
 
 
-
-
-# перевод двумерный массив в одномерный numpy массив
-def convert_to_numpy_simple_array(arr):
-    arr = np.array(arr)
-    return arr.reshape(1, IMAGE_PIXELES)[0]
-
-
-def get_matrix_images_for_train():
-    images = []
-    target = []
-
-    for i in range(1, COUNT_TRAINING_ITEMS + 1):
-        image = cv2.imread('./circles/drawing(' + str(i) + ').png', 0)
-        images.append(convert_to_numpy_simple_array(image))
-        target.append(0)
-
-    for i in range(1, COUNT_TRAINING_ITEMS + 1):
-        image = cv2.imread('./squares/drawing(' + str(i) + ').png', 0)
-        images.append(convert_to_numpy_simple_array(image))
-        target.append(1)
-
-    for i in range(1, COUNT_TRAINING_ITEMS + 1):
-        image = cv2.imread('./triangles/drawing(' + str(i) + ').png', 0)
-        images.append(convert_to_numpy_simple_array(image))
-        target.append(2)
-
-    return images, target
-
-
-def get_matrix_images_for_test():
-    images = []
-    target = []
-
-    for i in range(COUNT_TRAINING_ITEMS + 1, 100):
-        image = cv2.imread('./circles/drawing(' + str(i) + ').png', 0)
-        images.append(convert_to_numpy_simple_array(image))
-        target.append(0)
-
-    for i in range(COUNT_TRAINING_ITEMS + 1, 100):
-        image = cv2.imread('./squares/drawing(' + str(i) + ').png', 0)
-        images.append(convert_to_numpy_simple_array(image))
-        target.append(1)
-
-    for i in range(COUNT_TRAINING_ITEMS + 1, 100):
-        image = cv2.imread('./triangles/drawing(' + str(i) + ').png', 0)
-        images.append(convert_to_numpy_simple_array(image))
-        target.append(2)
-
-    return images, target
+# Прогоняем через сеть картинку
+def predict_image(W, b, X):
+    h, z = feed_forward(X, W, b)
+    return h
 
 
 def train():
@@ -240,29 +242,41 @@ def train():
 
 def test():
     images, y_test = get_matrix_images_for_test() # массив пикселей картинки
-    # shuffle(images)
     X_test = StandardScaler().fit_transform(images)
-
     W, b = setup_and_init_weights_from_file()
 
+    # случайно индекс для выбора рандомной картинки на сверку
+    rand = random.randint(1, 56)
 
     y_pred, h_pred = predict_y(W, b, X_test, 3)
 
-    answer = h_pred[3]
+    h_solo = predict_image(W, b, X_test[rand])
+    answer = h_solo[3]
 
-    print("=========")
-    print(answer)
-    print("=========")
-
-    # вероятность
+    # вероятность угадать
     accuracy_score(y_test, y_pred) * 100
     print('Prediction accuracy is {}%'.format(accuracy_score(y_test, y_pred) * 100))
 
-    plt.matshow([h_pred[1][i: i + 28] for i in range(0, len(h_pred[1]), 28)])
+    # вывод картинки
+    plt.matshow([h_solo[1][i: i + 28] for i in range(0, len(h_solo[1]), 28)])
     plt.show()
-    print(answer.tolist().index(max(answer)))
+
+    figure_index = answer.tolist().index(max(answer))
+    if figure_index == 0:
+        print('Круг')
+    elif figure_index == 1:
+        print('Квадрат')
+    elif figure_index == 2:
+        print('Треугольник')
 
 
 if __name__ == "__main__":
-    # train()
-    test()
+    print("1 - тренировка\n2 - тестирование")
+    menu = int(input())
+
+    if menu == 1:
+      train()
+    elif menu == 2:
+        test()
+    else:
+        print('некорректный ввод')

@@ -10,9 +10,10 @@ import cv2
 import re
 
 
-COUNT_TRAINING_ITEMS = 70
+COUNT_TRAINING_ITEMS = 80
 IMAGE_PIXELES = 28 * 28
 OUTPUT_VARIANTS = 3
+SECOND_LAYER = 10
 
 
 def write_file(W, b):
@@ -119,7 +120,7 @@ def calculate_hidden_delta(delta_plus_1, w_l, z_l):
     return np.dot(np.transpose(w_l), delta_plus_1) * f_deriv(z_l)
 
 
-def train_nn(nn_structure, X, y, iter_num=200, alpha=0.25):
+def train_nn(nn_structure, X, y, iter_num=1000, alpha=0.25):
     W, b = setup_and_init_weights(nn_structure)
     cnt = 0
     m = len(y)
@@ -164,6 +165,7 @@ def predict_y(W, b, X, n_layers):
     for i in range(m):
         h, z = feed_forward(X[i, :], W, b)
         y[i] = np.argmax(h[n_layers])
+        print(h[3])
     return y, h
 
 
@@ -226,7 +228,7 @@ def train():
 
     y_v_train = convert_y_to_vect(y_train)
 
-    nn_structure = [IMAGE_PIXELES, int(IMAGE_PIXELES / 2), OUTPUT_VARIANTS]
+    nn_structure = [IMAGE_PIXELES, SECOND_LAYER, OUTPUT_VARIANTS]
     W, b, avg_cost_func = train_nn(nn_structure, X_train, y_v_train)
     plt.plot(avg_cost_func)
     plt.ylabel('Average J')
@@ -238,7 +240,7 @@ def train():
 
 def test():
     images, y_test = get_matrix_images_for_test() # массив пикселей картинки
-    shuffle(images)
+    # shuffle(images)
     X_test = StandardScaler().fit_transform(images)
 
     W, b = setup_and_init_weights_from_file()
@@ -248,7 +250,9 @@ def test():
 
     answer = h_pred[3]
 
-    print(h_pred[3])
+    print("=========")
+    print(answer)
+    print("=========")
 
     # вероятность
     accuracy_score(y_test, y_pred) * 100
